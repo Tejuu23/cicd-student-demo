@@ -1,0 +1,72 @@
+name: Complete CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+
+  # -------------------------
+  # CONTINUOUS INTEGRATION
+  # -------------------------
+
+  test:
+    name: CI - Test Application
+    runs-on: ubuntu-24.04
+
+    steps:
+
+      - name: Download source code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run automated tests
+        run: pytest -v
+
+
+  # -------------------------
+  # CONTINUOUS DEPLOYMENT
+  # -------------------------
+
+  deploy:
+    name: CD - Deploy Website
+
+    needs: test
+
+    runs-on: ubuntu-24.04
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+
+      - name: Download source code
+        uses: actions/checkout@v7
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
